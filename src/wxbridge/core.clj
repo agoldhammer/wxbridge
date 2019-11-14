@@ -19,6 +19,8 @@
 
 (def cities ["Boston" "Paris,FR"])
 
+(def svrdb (atom {}))
+
 (comment
     @(http/get wxurl options
               (fn [{:keys [status headers body error]}] ;; asynchronous response handling
@@ -29,15 +31,18 @@
 (defn make-options [city]
   (assoc-in options [:query-params "q"] city))
 
-(defn get-city-data [city]
+(defn get-city-data [city db]
   (http/get wxurl (make-options city)
             (fn [{:keys [status headers body error]}] ;; asynchronous response handling
-                  (if error
-                    (println "Failed, exception is " error)
-                    (println "Async HTTP GET: " body))) ))
+              (prn status)
+              (if error
+                (swap! db assoc city {:success false
+                                      :error error})
+                (swap! db assoc city {:success true
+                                      :wxdata body})))))
 
 #_(defn handle [city]
-  (let [{:keys [status body]} (get-city-data city)]
+    (let [{:keys [status body]} (get-city-data city)]
     (prn "handle" status body)
     (if (= status 200)
       {:status 200
