@@ -6,7 +6,7 @@
    [clojure.core.async :as async :refer [go >! <!! chan]]
    [clojure.tools.logging :as log]
    [ring.util.response :as resp]
-   [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
+   [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
    [compojure.core :refer [defroutes GET]]
    [compojure.route :as route]
    [org.httpkit.client :as http]
@@ -58,6 +58,7 @@
        :body (:body resp)})))
 
 (defroutes app
+  #_(GET "/" [] (resp/resource-response "index.html"))
   (GET "/" [] (resp/resource-response "index.html" {:root "public"}))
   (GET "/wx/:city" [city] (handle-city city))
   (route/resources "/")
@@ -69,7 +70,7 @@
    :headers {"Content-Type" "text/html"}
    :body    "hello HTTP!"})
 
-(def site (wrap-defaults app api-defaults))
+(def site (wrap-defaults app site-defaults))
 
 (defn -main
   []
