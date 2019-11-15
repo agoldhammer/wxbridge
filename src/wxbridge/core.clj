@@ -48,10 +48,11 @@
   (let [out-chan (chan)]
     (get-city-data city out-chan)
     (let [resp (<!! out-chan)]
-      (prn resp)
+      #_(prn resp)
       {:status (:status resp)
        :headers {"Content-Type" "application/json; charset=utf-8"
-                 "Connection" "keep-alive"}
+                 "Connection" "keep-alive"
+                 "Access-Control-Allow-Origin" "*"}
        :body (:body resp)})))
 
 (defroutes app
