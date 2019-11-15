@@ -4,6 +4,7 @@
    #_[ring.middleware.file :as rmf :refer [wrap-file]]
    #_[ring.middleware.resource :as rmr :refer [wrap-resource]]
    [clojure.core.async :as async :refer [go >! <!! chan]]
+   [clojure.tools.logging :as log]
    [ring.util.response :as resp]
    [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
    [compojure.core :refer [defroutes GET]]
@@ -49,6 +50,7 @@
     (get-city-data city out-chan)
     (let [resp (<!! out-chan)]
       #_(prn resp)
+      (log/info "wxbridge: query:" city "status:" (:status resp))
       {:status (:status resp)
        :headers {"Content-Type" "application/json; charset=utf-8"
                  "Connection" "keep-alive"
@@ -71,7 +73,9 @@
 
 (defn -main
   []
-  (svr/run-server site {:port 7070})
+  (let [port 3033]
+    (log/info "wxbridge: started on port " port)
+    (svr/run-server site {:port port}))
   #_(ra/run-jetty rts {:port 3000}))
 
 ;; -------------------------------------
