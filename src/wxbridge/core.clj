@@ -26,30 +26,12 @@
 
 (defn get-city-data [city channel]
   (http/get wxurl (make-options city)
-            (fn [resp] (go (>! channel (dissoc resp :opts))))
-            #_(fn [{:keys [status headers body error]}] ;; asynchronous response handling
-              (prn "gcd" status headers)
-              (if error
-                (go (>! channel {city {:success false
-                                       :error error}}))
-                (go (>! channel {city {:success true
-                                       :wxdata body}}))))))
-
-#_(defn get-city-data [city db]
-  (http/get wxurl (make-options city)
-            (fn [{:keys [status headers body error]}] ;; asynchronous response handling
-              (prn "gcd" headers)
-              (if error
-                (swap! db assoc city {:success false
-                                      :error error})
-                (swap! db assoc city {:success true
-                                      :wxdata body})))))
+            (fn [resp] (go (>! channel (dissoc resp :opts))))))
 
 (defn handle-city [city]
   (let [out-chan (chan)]
     (get-city-data city out-chan)
     (let [resp (<!! out-chan)]
-      #_(prn resp)
       (log/info "wxbridge: query:" city "status:" (:status resp))
       {:status (:status resp)
        :headers {"Content-Type" "application/json; charset=utf-8"
@@ -57,20 +39,25 @@
                  "Access-Control-Allow-Origin" "*"}
        :body (:body resp)})))
 
+(defn wrap-text
+  "changes response type on bare index call to text/html
+to prevent file from being downloaded"
+  [response]
+  (assoc-in response [:headers "Content-Type"]
+            "text/html; charset=utf-8"))
+
 (defroutes app
-  #_(GET "/" [] (resp/resource-response "index.html"))
-  (GET "/" [] (resp/resource-response "index.html" {:root "public"}))
+  (GET "/" [] (wrap-text (resp/file-response "index.html")))
   (GET "/wx/:city" [city] (handle-city city))
   (route/resources "/")
   (route/files "public")
   (route/not-found "Weather info not found"))
 
-#_(defn app [req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    "hello HTTP!"})
-
 (def site (wrap-defaults app site-defaults))
+
+;; Deployment info: https://www.http-kit.org/server.html
+;; Also see for hotcode reloadable setup: 
+;; https://www.http-kit.org/migration.html
 
 (defn -main
   []
@@ -79,13 +66,6 @@
     (svr/run-server site {:port port}))
   #_(ra/run-jetty rts {:port 3000}))
 
-;; -------------------------------------
-(comment
-  @(http/get wxurl options
-             (fn [{:keys [status _headers _body error]}] ;; asynchronous response handling
-               (if error
-                 (println "Failed, exception is " error)
-                 (println "Async HTTP GET: " status)))))
 
 
 
