@@ -7,6 +7,7 @@
    [clojure.tools.logging :as log]
    [ring.util.response :as resp]
    [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+   [ring.middleware.resource :refer [wrap-resource]]
    [compojure.core :refer [defroutes GET]]
    [compojure.route :as route]
    [org.httpkit.client :as http]
@@ -47,13 +48,17 @@ to prevent file from being downloaded"
             "text/html; charset=utf-8"))
 
 (defroutes app
-  (GET "/" [] (wrap-text (resp/file-response "index.html")))
+  (GET "/" [] (wrap-text (resp/resource-response "public/index.html")))
   (GET "/wx/:city" [city] (handle-city city))
   (route/resources "/")
   (route/files "public")
   (route/not-found "Weather info not found"))
 
-(def site (wrap-defaults app site-defaults))
+(defn beef-up-app
+  [my-app]
+  (wrap-resource my-app "public" {:allow-symlinks? true}))
+
+(def site (wrap-defaults (beef-up-app app) site-defaults))
 
 ;; Deployment info: https://www.http-kit.org/server.html
 ;; Also see for hotcode reloadable setup: 
@@ -62,7 +67,7 @@ to prevent file from being downloaded"
 (defn -main
   []
   (let [port 3033]
-    (log/info "wxbridge: started on port " port)
+    (log/info "wxbridge-beefed: started on port " port)
     (svr/run-server site {:port port}))
   #_(ra/run-jetty rts {:port 3000}))
 
