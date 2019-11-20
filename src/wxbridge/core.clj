@@ -4,7 +4,8 @@
    #_[ring.middleware.file :as rmf :refer [wrap-file]]
    #_[ring.middleware.resource :as rmr :refer [wrap-resource]]
    [clojure.core.async :as async :refer [go >! <!! chan]]
-   [clojure.tools.logging :as log]
+   #_[clojure.tools.logging :as log]
+   [taoensso.timbre :as timbre :refer [info]]
    [ring.util.response :as resp]
    [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
    [ring.middleware.resource :refer [wrap-resource]]
@@ -33,7 +34,7 @@
   (let [out-chan (chan)]
     (get-city-data city out-chan)
     (let [resp (<!! out-chan)]
-      (log/info "[wxbridge.core]" "query:" city "status:" (:status resp))
+      (info "query:" city "status:" (:status resp))
       {:status (:status resp)
        :headers {"Content-Type" "application/json; charset=utf-8"
                  "Connection" "keep-alive"
@@ -67,7 +68,7 @@ to prevent file from being downloaded"
 (defn -main
   []
   (let [port 3033]
-    (log/info "[wxbridge.core]" "wxbridge: started on port " port)
+    (info "wxbridge: started on port " port)
     (svr/run-server site {:port port}))
   #_(ra/run-jetty rts {:port 3000}))
 

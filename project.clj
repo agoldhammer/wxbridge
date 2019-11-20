@@ -5,7 +5,8 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/core.async "0.5.527"]
-                 [org.clojure/tools.logging "0.5.0"]
+                 #_[org.clojure/tools.logging "0.5.0"]
+                 [com.taoensso/timbre "4.10.0"]
                  [ring "1.7.1"]
                  [ring/ring-defaults "0.3.2"]
                  [compojure "1.6.1"]
