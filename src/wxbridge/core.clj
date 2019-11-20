@@ -33,7 +33,7 @@
   (let [out-chan (chan)]
     (get-city-data city out-chan)
     (let [resp (<!! out-chan)]
-      (log/info "wxbridge: query:" city "status:" (:status resp))
+      (log/info "[wxbridge.core]" "query:" city "status:" (:status resp))
       {:status (:status resp)
        :headers {"Content-Type" "application/json; charset=utf-8"
                  "Connection" "keep-alive"
@@ -67,7 +67,7 @@ to prevent file from being downloaded"
 (defn -main
   []
   (let [port 3033]
-    (log/info "wxbridge-beefed: started on port " port)
+    (log/info "[wxbridge.core]" "wxbridge: started on port " port)
     (svr/run-server site {:port port}))
   #_(ra/run-jetty rts {:port 3000}))
 
