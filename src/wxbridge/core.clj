@@ -59,7 +59,12 @@ to prevent file from being downloaded"
   [my-app]
   (wrap-resource my-app "public" {:allow-symlinks? true}))
 
-(def site (wrap-defaults (beef-up-app app) site-defaults))
+(defn log-requests [handler]
+  (fn [request]
+    (info (:remote-addr request) ":" (:uri request))
+    (handler request)))
+
+(def site (log-requests (wrap-defaults (beef-up-app app) site-defaults)))
 
 ;; Deployment info: https://www.http-kit.org/server.html
 ;; Also see for hotcode reloadable setup: 
