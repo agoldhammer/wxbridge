@@ -11,10 +11,12 @@
                  [ring/ring-defaults "0.3.2"]
                  [compojure "1.6.1"]
                  [http-kit "2.4.0-alpha1"]
+                 [commons-daemon/commons-daemon "1.2.2"]
                  #_[clj-http "3.10.0"]
                  #_[metosin/reitit "0.3.10"] ]
   :plugins [[lein-ring "0.12.5"]]
   #_#_:ring {:handler wxbridge.core/rts}
-  :main ^:skip-aot wxbridge.core
+  :main wxbridge.core
+  :aot :all
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

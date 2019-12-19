@@ -1,4 +1,5 @@
 (ns wxbridge.core
+  (:import [org.apache.commons.daemon Daemon DaemonContext])
   (:require
    #_[ring.adapter.jetty :as ra]
    #_[ring.middleware.file :as rmf :refer [wrap-file]]
@@ -14,12 +15,16 @@
    [org.httpkit.client :as http]
    [org.httpkit.server :as svr]
    [wxbridge.conf :as conf :refer [appid]])
-  (:gen-class))
+  (:gen-class
+   :implements [org.apache.commons.daemon.Daemon]))
 
+;; state is map
+;; {:verbose true|false :server fn to stop server}
+(defonce state (atom {}))
 
-(def wxurl "https://api.openweathermap.org/data/2.5/forecast")
+(defonce wxurl "https://api.openweathermap.org/data/2.5/forecast")
 
-(def options {:timeout 1500
+(defonce options {:timeout 1500
               :query-params {"units" "imperial"
                              "appid" appid}})
 
@@ -34,7 +39,8 @@
   (let [out-chan (chan)]
     (get-city-data city out-chan)
     (let [resp (<!! out-chan)]
-      (info "query:" city "status:" (:status resp))
+      (when (:verbose @state)
+        (info "query:" city "status:" (:status resp)))
       {:status (:status resp)
        :headers {"Content-Type" "application/json; charset=utf-8"
                  "Connection" "keep-alive"
@@ -61,20 +67,51 @@ to prevent file from being downloaded"
 
 (defn log-requests [handler]
   (fn [request]
-    (info (:remote-addr request) ":" (:uri request))
+    (when (:verbose @state)
+      (info (:remote-addr request) ":" (:uri request)))
     (handler request)))
 
 (def site (log-requests (wrap-defaults (beef-up-app app) site-defaults)))
+
+(defn init [verbose]
+  (swap! state assoc :verbose verbose))
+
+(defn stop []
+  ;; :server slot of state holds the stop function returned by start
+  (info "Shutting down server")
+  ((:server @state)))
+
+(defn start []
+  (let [port 3033]
+    (info "wxbridge: started on port " port "verbose: " (:verbose @state))
+    (swap! state assoc :server (svr/run-server site {:port port}))))
+
+;; daemonize from Clojure Cookbook
+
+(defn -init [this ^DaemonContext context]
+  (init (.getArguments context)))
+
+(defn -start [this]
+  (start))
+
+(defn -stop [this]
+  (stop))
+
+(defn -destroy [this])
 
 ;; Deployment info: https://www.http-kit.org/server.html
 ;; Also see for hotcode reloadable setup: 
 ;; https://www.http-kit.org/migration.html
 
+; -v flags verbose output
+
 (defn -main
-  []
-  (let [port 3033]
-    (info "wxbridge: started on port " port)
-    (svr/run-server site {:port port}))
+  [& args]
+  (info "args" args)
+  (if (= (first args) "-v")
+    (init true)
+    (init false))
+  (start)
   #_(ra/run-jetty rts {:port 3000}))
 
 
