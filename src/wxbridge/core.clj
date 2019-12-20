@@ -73,8 +73,9 @@ to prevent file from being downloaded"
 
 (def site (log-requests (wrap-defaults (beef-up-app app) site-defaults)))
 
-(defn init [verbose]
-  (swap! state assoc :verbose verbose))
+(defn init [args]
+  (let [verbose (= (first args) "-v")]
+    (swap! state assoc :verbose verbose)))
 
 (defn stop []
   ;; :server slot of state holds the stop function returned by start
@@ -108,9 +109,8 @@ to prevent file from being downloaded"
 (defn -main
   [& args]
   (info "args" args)
-  (if (= (first args) "-v")
-    (init true)
-    (init false))
+  (init args)
+  
   (start)
   #_(ra/run-jetty rts {:port 3000}))
 
