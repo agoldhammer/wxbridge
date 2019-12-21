@@ -1,0 +1,25 @@
+#! /bin/sh
+JAR=wxbridge-0.1.0-standalone.jar
+LOGDIR=/var/log/wx
+CORE=wxbridge.core
+
+# sudo /usr/bin/jsvc -cp "$(pwd)/wxbridge-0.1.0-standalone.jar" -outfile "$(pwd)/wx.log" wxbridge.core
+
+startme() {
+	echo "Starting weather server"
+	sudo /usr/bin/jsvc -umask 022 -cp "$(pwd)/$JAR" -outfile "$LOGDIR/wx.log" -errfile "$LOGDIR/wx.err" $CORE
+}
+
+stopme() {
+	echo "Stopping weather server"
+	sudo /usr/bin/jsvc -cp "$(pwd)/$JAR" -stop $CORE
+}
+
+case "$1" in
+	start) startme ;;
+	stop)  stopme ;;
+	restart) stopme; startme ;;
+	*) echo "usage: $0 start|stop|restart" >&2
+	   exit 1
+	   ;;
+esac
